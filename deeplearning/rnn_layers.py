@@ -32,7 +32,9 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     # hidden state and any values you need for the backward pass in the next_h   #
     # and cache variables respectively.                                          #
     ##############################################################################
-    pass
+    z = x @ Wx + prev_h @ Wh + b
+    next_h = np.tanh(z)
+    cache = z, Wx, Wh, x, prev_h
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -61,7 +63,13 @@ def rnn_step_backward(dnext_h, cache):
     # HINT: For the tanh function, you can compute the local derivative in terms #
     # of the output value from tanh.                                             #
     ##############################################################################
-    pass
+    z, Wx, Wh, x, prev_h = cache
+    dz = np.multiply(dnext_h, (1 - np.tanh(z) ** 2))
+    dx = dz @ Wx.T
+    dprev_h = dz @ Wh.T
+    dWx = x.T @ dz
+    dWh = prev_h.T @ dz
+    db = dz.sum(axis=0)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -187,8 +195,8 @@ def sigmoid(x):
     """
     A numerically stable version of the logistic sigmoid function.
     """
-    pos_mask = (x >= 0)
-    neg_mask = (x < 0)
+    pos_mask = x >= 0
+    neg_mask = x < 0
     z = np.zeros_like(x)
     z[pos_mask] = np.exp(-x[pos_mask])
     z[neg_mask] = np.exp(x[neg_mask])
@@ -413,7 +421,8 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
     dx_flat /= N
     dx_flat *= mask_flat[:, None]
 
-    if verbose: print('dx_flat: ', dx_flat.shape)
+    if verbose:
+        print("dx_flat: ", dx_flat.shape)
 
     dx = dx_flat.reshape(N, T, V)
 

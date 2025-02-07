@@ -64,7 +64,7 @@ def rnn_step_backward(dnext_h, cache):
     # of the output value from tanh.                                             #
     ##############################################################################
     z, Wx, Wh, x, prev_h = cache
-    dz = np.multiply(dnext_h, (1 - np.tanh(z) ** 2))
+    dz = dnext_h * (1 - np.tanh(z) ** 2)
     dx = dz @ Wx.T
     dprev_h = dz @ Wh.T
     dWx = x.T @ dz
@@ -100,7 +100,14 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # input data. You should use the rnn_step_forward function that you defined  #
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
-    pass
+    N, T, _ = x.shape
+    (H,) = b.shape
+    h = np.zeros((N, T, H))
+    cache = [None] * T
+    prev_h = h0
+    for t in range(T):
+        h[:, t, :], cache[t] = rnn_step_forward(x[:, t, :], prev_h, Wx, Wh, b)
+        prev_h = h[:, t, :]
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -127,7 +134,19 @@ def rnn_backward(dh, cache):
     # sequence of data. You should use the rnn_step_backward function that you   #
     # defined above. You can use a for loop to help compute the backward pass.   #
     ##############################################################################
-    pass
+    z, Wx, Wh, x, prev_h = cache[0]
+    N, T, H = dh.shape
+    _, D = x.shape
+    dx = np.zeros((N, T, D))
+    dh0 = np.zeros((N, H))
+    dWx = np.zeros((D, H))
+    dWh = np.zeros((H, H))
+    db = np.zeros((H,))
+    for t in range(T - 1, -1, -1):
+        dx[:, t, :], dh0, Wx, Wh, b = rnn_step_backward(dh[:, t, :] + dh0, cache[t])
+        dWx += Wx
+        dWh += Wh
+        db += b
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################

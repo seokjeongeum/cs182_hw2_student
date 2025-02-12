@@ -252,7 +252,13 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     # TODO: Implement the forward pass for a single timestep of an LSTM.        #
     # You may want to use the numerically stable sigmoid implementation above.  #
     #############################################################################
-    pass
+    _, H = prev_h.shape
+    a = x @ Wx + prev_h @ Wh + b
+    a_i, a_f, a_o, a_g = a[:, :H], a[:, H : 2 * H], a[:, 2 * H : 3 * H], a[:, 3 * H :]
+    i, f, o, g = sigmoid(a_i), sigmoid(a_f), sigmoid(a_o), np.tanh(a_g)
+    next_c = f * prev_c + i * g
+    next_h = o * np.tanh(next_c)
+    cache = x, prev_h, prev_c, Wx, Wh, i, f, o, g, next_c
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -284,7 +290,19 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    pass
+    x, prev_h, prev_c, Wx, Wh, i, f, o, g, next_c = cache
+    product = dnext_h * o * (1 - np.tanh(next_c) ** 2) + dnext_c
+    di = g * product * i * (1 - i)
+    df = prev_c * product * f * (1 - f)
+    do = dnext_h * np.tanh(next_c) * o * (1 - o)
+    dg = i * product * (1 - g**2)
+    da = np.concatenate([di, df, do, dg], axis=1)
+    dx = da @ Wx.T
+    dprev_h = da @ Wh.T
+    dprev_c = f * product
+    dWx = x.T @ da
+    dWh = prev_h.T @ da
+    db = da.sum(axis=0)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################

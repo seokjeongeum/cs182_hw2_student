@@ -25,9 +25,7 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                                 #
     #############################################################################
     N = x.shape[0]
-    out = x.reshape(N, -1)
-    out = out @ w
-    out = out + b
+    out = x.reshape(N, -1) @ w + b
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -188,7 +186,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # and shift the normalized data using gamma and beta. Store the result in   #
         # the out variable.                                                         #
         #############################################################################
-        out = (x - running_mean) / (running_var + eps) * gamma + beta
+        out = (x - running_mean) / np.sqrt(running_var + eps) * gamma + beta
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################

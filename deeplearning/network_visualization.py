@@ -3,6 +3,8 @@ import random
 import numpy as np
 
 import torch
+import torch.autograd
+import torch.nn
 import torch.nn.functional as F
 
 
@@ -31,7 +33,10 @@ def compute_saliency_maps(X, y, model):
     # to each input image. You first want to compute the loss over the correct   #
     # scores, and then compute the gradients with torch.autograd.gard.           #
     ##############################################################################
-    pass
+    scores = model(X)
+    loss = scores.gather(1, y.view(-1, 1)).sum()
+    (gradients,) = torch.autograd.grad(loss, X)
+    saliency = gradients.abs().max(dim=1).values
     ##############################################################################
     #                             END OF YOUR CODE                               #
     ##############################################################################

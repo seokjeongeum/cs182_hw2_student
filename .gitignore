@@ -10,4 +10,3 @@ assignment2.zip
 /deeplearning/datasets/coco_captioning/
 /deeplearning/datasets/imagenet_val_25.npz
 /deeplearning/datasets/squeezenet.ckpt*
-.conda

@@ -148,15 +148,17 @@ class CaptioningRNN(object):
         if self.cell_type == "rnn":
             out, cache = rnn_forward(out_embed, out_proj, Wx, Wh, b)
         if self.cell_type == "lstm":
-            raise NotImplementedError()
+            out, cache = lstm_forward(out_embed, out_proj, Wx, Wh, b)
         out_vocab, cache_vocab = temporal_affine_forward(out, W_vocab, b_vocab)
         loss, dx = temporal_softmax_loss(out_vocab, captions_out, mask)
 
-        dx, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dx, cache_vocab)
+        dx, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(
+            dx, cache_vocab
+        )
         if self.cell_type == "rnn":
             dx, dh0, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dx, cache)
         if self.cell_type == "lstm":
-            raise NotImplementedError()
+            dx, dh0, grads["Wx"], grads["Wh"], grads["b"] = lstm_backward(dx, cache)
         grads["W_embed"] = word_embedding_backward(dx, cache_embed)
         dh0, grads["W_proj"], grads["b_proj"] = affine_backward(dh0, cache_proj)
         ############################################################################
@@ -219,16 +221,18 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        x = self._start
+        x = np.full((N,), self._start)
         h, _ = affine_forward(features, W_proj, b_proj)
+        if self.cell_type == "lstm":
+            c = np.zeros(h.shape)
         for t in range(max_length):
-            out, _ = word_embedding_forward(x, W_embed)
+            x, _ = word_embedding_forward(x, W_embed)
             if self.cell_type == "rnn":
-                h, _ = rnn_step_forward(out, h, Wx, Wh, b)
+                h, _ = rnn_step_forward(x, h, Wx, Wh, b)
             if self.cell_type == "lstm":
-                raise NotImplementedError()
-            out, _ = affine_forward(h, W_vocab, b_vocab)
-            captions[:, t] = out.argmax(axis=1)
+                h, c, _ = lstm_step_forward(x, h, c, Wx, Wh, b)
+            x, _ = affine_forward(h, W_vocab, b_vocab)
+            captions[:, t] = x = x.argmax(axis=1)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

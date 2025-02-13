@@ -74,7 +74,13 @@ def make_fooling_image(X, target_y, model):
     # in fewer than 100 iterations of gradient ascent.                           #
     # You can print your progress over iterations to check your algorithm.       #
     ##############################################################################
-    pass
+    scores = model(X_fooling)
+    while target_y != scores.detach().max(dim=1)[1][0]:
+        (g,) = torch.autograd.grad(scores[:, target_y], X_fooling)
+        with torch.no_grad():
+            X_fooling += learning_rate * g / torch.linalg.norm(g)
+        X_fooling.requires_grad_()
+        scores = model(X_fooling)
     ##############################################################################
     #                             END OF YOUR CODE                               #
     ##############################################################################
